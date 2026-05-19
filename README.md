@@ -46,8 +46,9 @@ Foreground debug flow в двух терминалах:
 Проверка клиентского пути:
 
 ```bash
+./scripts/check-dbus-chain.sh
 ./scripts/enroll-test.sh --list-only
-./scripts/enroll-test.sh "$USER"
+./scripts/enroll-test.sh --finger right-index-finger "$USER"
 ```
 
 ## Systemd flow
@@ -71,6 +72,7 @@ sudo systemctl restart open-fprintd.service python3-validity.service
 После reboot проверить:
 
 ```bash
+./scripts/check-dbus-chain.sh
 fprintd-list "$USER"
 fprintd-verify "$USER"
 ```
@@ -94,6 +96,7 @@ fprintd-verify "$USER"
 
 - [Install flow](docs/install.md)
 - [Rollback flow](docs/rollback.md)
+- [Systemd design](docs/systemd-design.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Security and privacy](docs/security-and-privacy.md)
 - [Release checklist](docs/release-checklist.md)

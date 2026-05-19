@@ -128,9 +128,38 @@ Latest local state check: 2026-05-18 during iteration 003.
   - `fprintd-verify "$USER"` возвращает `verify-match (done)`.
 - Firmware cache заполнен: `/opt/fedora-validity/firmware/python-validity/6_07f_lenovo_mis_qm.xpfwext`.
 
+## Iteration 006: D-Bus chain check
+
+- Репозиторий синхронизирован с `origin/main`; опубликованный commit:
+  `93fdc89 Initial Fedora Validity setup publication`.
+- `scripts/enroll-test.sh --list-only` уже корректно вызывает
+  `fprintd-list "$TARGET_USER"` и не передаёт `--list-only` в `fprintd-list`.
+- Добавлен read-only checker `scripts/check-dbus-chain.sh`.
+- Текущая система больше не воспроизводит старый `AccessDenied`:
+  - `net.reactivated.Fprint` принадлежит `open-fprintd.service`;
+  - `fprintd.service` не активен;
+  - `RegisterDevice` и `ListEnrolledFingers` видны через introspection;
+  - `io.github.uunicorn.Fprint.conf` установлен в `/etc/dbus-1/system.d`;
+  - `GetDevices` возвращает `ao 1 "/net/reactivated/Fprint/Device/0"`.
+- Свежая ошибка `./scripts/check-dbus-chain.sh` и
+  `./scripts/enroll-test.sh --list-only`:
+  `usb.core.USBError: [Errno 19] No such device`.
+- Вывод: D-Bus/policy слой пройден, но `python-validity` держит stale USB
+  handle после того, как сенсор снова появился как `Bus 001 Device 010`.
+- Безопасный следующий шаг из локального интерактивного терминала:
+  `./scripts/systemd-test.sh --verify "$USER"`, чтобы перезапустить project
+  services через документированный workflow и перепривязать backend к текущему
+  USB device.
+- После ручной проверки выяснилось, что старый `systemd-test.sh` делал
+  `systemctl start` для уже активных project services, то есть не перезапускал
+  `python-validity` и не сбрасывал stale USB handle.
+- Исправление: `scripts/systemd-test.sh` теперь явно останавливает
+  `python3-validity.service`, затем `open-fprintd.service`, затем stock
+  `fprintd.service`, и только после этого стартует project services заново.
+
 ## Ближайшие шаги
 
-1. Подготовить проект к публикации на GitHub.
-2. Проверить, какие файлы нельзя публиковать: диагностические логи, архивы, персональные данные, generated artifacts.
-3. Сформировать чистый README/install/rollback/release checklist.
-4. PAM/authselect/GDM/sudo всё ещё не менять до отдельного решения.
+1. Выполнить `./scripts/systemd-test.sh --verify "$USER"` из локального терминала.
+2. Если stale USB handle повторяется после suspend/replug, добавить отдельную
+   итерацию для restart/rebind strategy.
+3. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.

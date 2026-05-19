@@ -9,7 +9,7 @@ usage() {
   cat <<'USAGE'
 Usage: systemd-test.sh [--verify] [USER]
 
-Starts the project systemd services for a manual test, then runs fprintd-list.
+Restarts the project systemd services for a manual test, then runs fprintd-list.
 With --verify it also runs fprintd-verify. This script does not change
 PAM/authselect/GDM/sudo and does not enable services.
 
@@ -98,7 +98,9 @@ if ((${#foreground_matches[@]} > 0)); then
 fi
 printf '[info] no foreground project processes detected.\n'
 
-section "start project services"
+section "restart project services"
+run sudo systemctl stop python3-validity.service
+run sudo systemctl stop open-fprintd.service
 run sudo systemctl stop fprintd.service
 run sudo systemctl start open-fprintd.service
 run sudo systemctl start python3-validity.service

@@ -62,11 +62,50 @@ install the backend D-Bus policy:
 
 ```bash
 ./scripts/install-dbus-policy.sh
+./scripts/check-dbus-chain.sh
 ```
 
 Then stop and restart both foreground debug services. The likely missing policy
 is `io.github.uunicorn.Fprint.conf`; it authorizes root-owned `open-fprintd` to
 call the `python-validity` backend interface.
+
+## USBError: No such device from ListEnrolledFingers
+
+If `./scripts/check-dbus-chain.sh` or `fprintd-list "$USER"` finds the
+registered D-Bus device but fails with:
+
+```text
+usb.core.USBError: [Errno 19] No such device (it may have been disconnected)
+```
+
+then D-Bus policy is already far enough along for `open-fprintd` to call the
+`python-validity` backend. The failure is lower in the stack: the backend has a
+stale USB handle after the sensor reappeared with a different bus/device number.
+
+Confirm the current split state:
+
+```bash
+./scripts/check-dbus-chain.sh
+lsusb -d 138a:0097
+systemctl status open-fprintd.service python3-validity.service --no-pager
+```
+
+Recover through the project systemd test flow from an interactive local
+terminal:
+
+```bash
+./scripts/systemd-test.sh --verify "$USER"
+```
+
+This restarts the project services through the documented script path, waits
+for `GetDevices`, runs `fprintd-list`, and only runs `fprintd-verify` because
+`--verify` was explicitly requested. It does not change PAM/authselect/GDM/sudo.
+
+If an older checkout still shows this error after `systemd-test.sh --verify`,
+check that `scripts/systemd-test.sh` prints `restart project services` and
+contains explicit stops for `python3-validity.service` and
+`open-fprintd.service`. A start-only workflow is not enough when the old
+`python-validity` process still holds a stale USB handle.
 
 ## UnknownMethod: RegisterDevice
 

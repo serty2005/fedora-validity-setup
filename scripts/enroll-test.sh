@@ -3,15 +3,17 @@ set -euo pipefail
 
 LIST_ONLY=0
 TARGET_USER="${USER:-}"
+FINGER=""
 
 usage() {
   cat <<'USAGE'
-Usage: enroll-test.sh [--list-only] [USER]
+Usage: enroll-test.sh [--list-only] [--finger FINGER] [USER]
 
 Runs fprintd client checks against the currently running foreground services.
 
 Options:
   --list-only  Run only fprintd-list USER; do not enroll or verify.
+  --finger     Finger name passed to fprintd-enroll --finger.
 USAGE
 }
 
@@ -20,9 +22,22 @@ while (($# > 0)); do
     --list-only)
       LIST_ONLY=1
       ;;
+    --finger)
+      if [[ -z "${2:-}" ]]; then
+        printf '[error] --finger requires a finger name.\n' >&2
+        exit 2
+      fi
+      FINGER="$2"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
+      ;;
+    --*)
+      printf '[error] unknown argument: %s\n' "$1" >&2
+      usage >&2
+      exit 2
       ;;
     *)
       TARGET_USER="$1"
@@ -72,8 +87,15 @@ if [[ "$LIST_ONLY" == "1" ]]; then
 fi
 
 section "enroll"
-printf '$ fprintd-enroll %q\n' "$TARGET_USER"
-fprintd-enroll "$TARGET_USER"
+enroll_args=()
+if [[ -n "$FINGER" ]]; then
+  enroll_args+=(--finger "$FINGER")
+fi
+enroll_args+=("$TARGET_USER")
+printf '$ fprintd-enroll'
+printf ' %q' "${enroll_args[@]}"
+printf '\n'
+fprintd-enroll "${enroll_args[@]}"
 
 section "verify"
 printf '$ fprintd-verify %q\n' "$TARGET_USER"

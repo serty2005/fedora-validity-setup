@@ -61,8 +61,9 @@
 Затем проверить клиентскую сторону:
 
 ```bash
+./scripts/check-dbus-chain.sh
 ./scripts/enroll-test.sh --list-only
-./scripts/enroll-test.sh "$USER"
+./scripts/enroll-test.sh --finger right-index-finger "$USER"
 ```
 
 ## Systemd install/test
@@ -79,7 +80,7 @@
 ./scripts/systemd-test.sh --verify "$USER"
 ```
 
-`scripts/systemd-test.sh` останавливает stock `fprintd.service` только для теста, стартует project services, ждёт `GetDevices`, затем запускает `fprintd-list` и, при `--verify`, `fprintd-verify`.
+`scripts/systemd-test.sh` останавливает stock `fprintd.service` только для теста, перезапускает project services, ждёт `GetDevices`, затем запускает `fprintd-list` и, при `--verify`, `fprintd-verify`.
 
 ## Enable after verification
 
@@ -97,6 +98,7 @@ sudo systemctl restart open-fprintd.service python3-validity.service
 ```bash
 systemctl is-enabled open-fprintd.service python3-validity.service
 systemctl is-active open-fprintd.service python3-validity.service
+./scripts/check-dbus-chain.sh
 fprintd-list "$USER"
 fprintd-verify "$USER"
 ```

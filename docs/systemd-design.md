@@ -120,6 +120,16 @@ test workflow, не
 restart/rebind strategy. Если не чинит, нужно исследовать startup path
 `python-validity` после USB re-enumeration.
 
+Если sensor кратко исчезает из `lsusb` сразу после verify, использовать:
+
+```bash
+./scripts/check-dbus-chain.sh --wait 15
+./scripts/stability-check.sh --iterations 2 --sleep 8 "$USER"
+```
+
+`check-dbus-chain.sh` по умолчанию ждёт до 10 секунд; `--wait 15` полезен для
+ручной проверки transient USB re-enumeration.
+
 ## Rollback
 
 Полный rollback project-installed systemd/D-Bus/helper артефактов:

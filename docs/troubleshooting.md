@@ -85,7 +85,7 @@ stale USB handle after the sensor reappeared with a different bus/device number.
 Confirm the current split state:
 
 ```bash
-./scripts/check-dbus-chain.sh
+./scripts/check-dbus-chain.sh --wait 15
 ./scripts/stability-check.sh --iterations 2
 lsusb -d 138a:0097
 systemctl status open-fprintd.service python3-validity.service --no-pager
@@ -107,6 +107,30 @@ check that `scripts/systemd-test.sh` prints `restart project services` and
 contains explicit stops for `python3-validity.service` and
 `open-fprintd.service`. A start-only workflow is not enough when the old
 `python-validity` process still holds a stale USB handle.
+
+## USB briefly disappears after verify
+
+After a failed or interrupted `fprintd-verify`, the Validity sensor may
+temporarily disappear from:
+
+```bash
+lsusb -d 138a:0097
+```
+
+and then reappear with a new USB device number, for example from
+`Bus 001 Device 010` to `Bus 001 Device 012`. This is a transient USB
+re-enumeration window. Use the checker with an explicit wait:
+
+```bash
+./scripts/check-dbus-chain.sh --wait 15
+./scripts/stability-check.sh --iterations 2 --sleep 8
+```
+
+If the sensor does not reappear, use the documented restart path:
+
+```bash
+./scripts/systemd-test.sh --verify "$USER"
+```
 
 ## UnknownMethod: RegisterDevice
 

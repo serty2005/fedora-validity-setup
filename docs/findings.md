@@ -158,11 +158,18 @@ Latest local state check: 2026-05-18 during iteration 003.
   `fprintd.service`, и только после этого стартует project services заново.
 - Iteration 008 добавляет `scripts/stability-check.sh` для повторяемой
   read-only проверки service layer без enroll и без PAM/authselect/GDM/sudo.
+- После `verify-no-match` пользователь поймал transient-состояние: `lsusb` на
+  короткое время не видел `138a:0097`, затем сенсор вернулся как
+  `Bus 001 Device 012`, а `python3-validity.service` получил новый PID.
+- `scripts/check-dbus-chain.sh` теперь поддерживает `--wait SECONDS` и по
+  умолчанию ждёт до 10 секунд появления USB device и registered D-Bus device.
 
 ## Ближайшие шаги
 
 1. Выполнить `./scripts/stability-check.sh --iterations 3` из локального терминала.
-2. Выполнить reboot и suspend/resume stability matrix.
+2. Для post-verify transient окна использовать
+   `./scripts/check-dbus-chain.sh --wait 15`.
+3. Выполнить reboot и suspend/resume stability matrix.
 3. Если stale USB handle повторяется после suspend/replug, добавить отдельную
    итерацию для restart/rebind strategy.
 4. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.

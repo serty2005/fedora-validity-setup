@@ -7,14 +7,19 @@ DBUS_ETC_DIR="${DBUS_ETC_DIR:-/etc/dbus-1/system.d}"
 DBUS_USR_DIR="${DBUS_USR_DIR:-/usr/share/dbus-1/system.d}"
 RUNTIME_DIR="${RUNTIME_DIR:-/var/run/python-validity}"
 FIRMWARE_CACHE_DIR="${FIRMWARE_CACHE_DIR:-/opt/fedora-validity/firmware/python-validity}"
+WAIT_SECONDS=10
 
 usage() {
   cat <<'USAGE'
-Usage: check-dbus-chain.sh [USER]
+Usage: check-dbus-chain.sh [--wait SECONDS] [USER]
 
 Checks the current fprintd/open-fprintd/python-validity chain without changing
 system state. It does not restart services, does not install policy files and
 does not change PAM/authselect/GDM/sudo.
+
+Options:
+  --wait SECONDS  Wait up to SECONDS for transient USB/device registration.
+                  Default: 10.
 USAGE
 }
 
@@ -84,6 +89,14 @@ classify_fprintd_list_failure() {
 
 while (($# > 0)); do
   case "$1" in
+    --wait)
+      if [[ -z "${2:-}" || ! "${2:-}" =~ ^[0-9]+$ ]]; then
+        printf '[error] --wait requires a non-negative integer.\n' >&2
+        exit 2
+      fi
+      WAIT_SECONDS="$2"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -105,12 +118,22 @@ for cmd in busctl fprintd-list lsusb systemctl; do
 done
 
 section "USB sensor"
-if lsusb_line="$(lsusb -d "$DEVICE_ID" 2>/dev/null | head -n 1)" && [[ -n "$lsusb_line" ]]; then
-  printf '[ok] %s\n' "$lsusb_line"
-else
-  printf '[error] USB device %s was not found by lsusb.\n' "$DEVICE_ID" >&2
-  exit 10
-fi
+lsusb_line=""
+for ((attempt = 0; attempt <= WAIT_SECONDS; attempt++)); do
+  lsusb_line="$(lsusb -d "$DEVICE_ID" 2>/dev/null | head -n 1 || true)"
+  if [[ -n "$lsusb_line" ]]; then
+    printf '[ok] %s\n' "$lsusb_line"
+    break
+  fi
+
+  if ((attempt == WAIT_SECONDS)); then
+    printf '[error] USB device %s was not found by lsusb after %s seconds.\n' "$DEVICE_ID" "$WAIT_SECONDS" >&2
+    exit 10
+  fi
+
+  printf '[info] USB device %s not found yet; waiting (%s/%s).\n' "$DEVICE_ID" "$((attempt + 1))" "$WAIT_SECONDS"
+  sleep 1
+done
 
 section "firmware files"
 if compgen -G "$RUNTIME_DIR/*.xpfwext" >/dev/null; then
@@ -186,14 +209,24 @@ printf '$ grep -R %q %q %q\n' 'fprint\|validity\|uunicorn' /usr/share/polkit-1/a
 grep -R 'fprint\|validity\|uunicorn' /usr/share/polkit-1/actions /etc/polkit-1 2>/dev/null || true
 
 section "registered devices"
-devices="$(
-  busctl --system call net.reactivated.Fprint /net/reactivated/Fprint/Manager net.reactivated.Fprint.Manager GetDevices 2>/dev/null || true
-)"
-printf '%s\n' "${devices:-no response}"
-if [[ ! "$devices" =~ ^ao[[:space:]]+[1-9] ]]; then
-  printf '[error] GetDevices did not report a registered fingerprint device.\n' >&2
-  exit 13
-fi
+devices=""
+for ((attempt = 0; attempt <= WAIT_SECONDS; attempt++)); do
+  devices="$(
+    busctl --system call net.reactivated.Fprint /net/reactivated/Fprint/Manager net.reactivated.Fprint.Manager GetDevices 2>/dev/null || true
+  )"
+  printf '%s\n' "${devices:-no response}"
+  if [[ "$devices" =~ ^ao[[:space:]]+[1-9] ]]; then
+    break
+  fi
+
+  if ((attempt == WAIT_SECONDS)); then
+    printf '[error] GetDevices did not report a registered fingerprint device after %s seconds.\n' "$WAIT_SECONDS" >&2
+    exit 13
+  fi
+
+  printf '[info] no registered device yet; waiting (%s/%s).\n' "$((attempt + 1))" "$WAIT_SECONDS"
+  sleep 1
+done
 
 section "fprintd-list"
 printf '$ fprintd-list %q\n' "$TARGET_USER"

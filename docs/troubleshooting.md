@@ -86,6 +86,7 @@ Confirm the current split state:
 
 ```bash
 ./scripts/check-dbus-chain.sh
+./scripts/stability-check.sh --iterations 2
 lsusb -d 138a:0097
 systemctl status open-fprintd.service python3-validity.service --no-pager
 ```

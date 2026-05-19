@@ -71,6 +71,7 @@ Helper сначала копирует `.xpfwext` из persistent cache:
 
 ```bash
 ./scripts/check-dbus-chain.sh
+./scripts/stability-check.sh --iterations 3
 ```
 
 Ручной systemd test flow:
@@ -85,6 +86,39 @@ Helper сначала копирует `.xpfwext` из persistent cache:
 сброса stale USB handle в backend-процессе. Скрипт делает это только как явный
 test workflow, не
 включает автозапуск и не меняет PAM/authselect/GDM/sudo.
+
+## Stability matrix
+
+До PAM/GDM/sudo integration сервисный слой должен пройти такие проверки:
+
+```bash
+# Baseline without changing system state
+./scripts/stability-check.sh --iterations 3
+
+# Physical verify, explicitly requested
+./scripts/stability-check.sh --verify "$USER"
+
+# Project service restart path
+./scripts/systemd-test.sh --verify "$USER"
+./scripts/stability-check.sh --iterations 2 --verify "$USER"
+
+# After reboot
+./scripts/stability-check.sh --iterations 2 --verify "$USER"
+
+# After suspend/resume
+./scripts/stability-check.sh --iterations 2 --verify "$USER"
+```
+
+Если после reboot или suspend/resume появляется `USBError: No such device`,
+сначала выполнить:
+
+```bash
+./scripts/systemd-test.sh --verify "$USER"
+```
+
+Если restart workflow чинит состояние, следующий production-шаг — отдельная
+restart/rebind strategy. Если не чинит, нужно исследовать startup path
+`python-validity` после USB re-enumeration.
 
 ## Rollback
 

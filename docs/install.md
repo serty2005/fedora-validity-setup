@@ -63,6 +63,7 @@
 ```bash
 ./scripts/check-dbus-chain.sh
 ./scripts/enroll-test.sh --list-only
+./scripts/stability-check.sh --iterations 3
 ./scripts/enroll-test.sh --finger right-index-finger "$USER"
 ```
 
@@ -99,6 +100,7 @@ sudo systemctl restart open-fprintd.service python3-validity.service
 systemctl is-enabled open-fprintd.service python3-validity.service
 systemctl is-active open-fprintd.service python3-validity.service
 ./scripts/check-dbus-chain.sh
+./scripts/stability-check.sh --verify "$USER"
 fprintd-list "$USER"
 fprintd-verify "$USER"
 ```

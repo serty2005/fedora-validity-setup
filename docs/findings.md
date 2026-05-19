@@ -156,10 +156,13 @@ Latest local state check: 2026-05-18 during iteration 003.
 - Исправление: `scripts/systemd-test.sh` теперь явно останавливает
   `python3-validity.service`, затем `open-fprintd.service`, затем stock
   `fprintd.service`, и только после этого стартует project services заново.
+- Iteration 008 добавляет `scripts/stability-check.sh` для повторяемой
+  read-only проверки service layer без enroll и без PAM/authselect/GDM/sudo.
 
 ## Ближайшие шаги
 
-1. Выполнить `./scripts/systemd-test.sh --verify "$USER"` из локального терминала.
-2. Если stale USB handle повторяется после suspend/replug, добавить отдельную
+1. Выполнить `./scripts/stability-check.sh --iterations 3` из локального терминала.
+2. Выполнить reboot и suspend/resume stability matrix.
+3. Если stale USB handle повторяется после suspend/replug, добавить отдельную
    итерацию для restart/rebind strategy.
-3. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.
+4. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.

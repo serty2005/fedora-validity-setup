@@ -11,12 +11,12 @@
 - USB fingerprint sensor Validity Sensors `138a:0097`.
 - Локальная сборка upstream `uunicorn/python-validity` и `uunicorn/open-fprintd`.
 
-## Не поддерживается в этом этапе
+## Не поддерживается
 
-- Проект не включает PAM/GDM/sudo fingerprint authentication.
-- Проект не меняет `authselect`, `/etc/pam.d`, GDM или sudo policy.
 - Проект не удаляет штатные `fprintd`, `fprintd-pam`, `libfprint`.
 - Не используются старые COPR RPM `python-validity` / `open-fprintd`, `--skip-broken`, `--nodeps`, downgrade или замена системного Python.
+- Проект не обещает GitHub/passkeys/WebAuthn через fingerprint. Это отдельная
+  тема.
 
 Если `authselect current` уже содержит `with-fingerprint`, это существующее состояние системы, а не действие этого проекта.
 
@@ -82,6 +82,40 @@ fprintd-list "$USER"
 fprintd-verify "$USER"
 ```
 
+## PAM/sudo/GNOME integration
+
+PAM/authselect integration является отдельным guarded этапом после зелёного
+service layer. Сначала выполнить read-only snapshot:
+
+```bash
+./scripts/check-pam-state.sh
+./scripts/check-pam-state.sh --verify "$USER"
+```
+
+Включение через штатный Fedora authselect путь:
+
+```bash
+./scripts/enable-pam.sh "$USER"
+```
+
+Если `with-fingerprint` уже включён, скрипт не делает лишних authselect
+изменений. Если feature отсутствует, он создаёт backup и выполняет:
+
+```bash
+sudo authselect enable-feature with-fingerprint
+sudo authselect apply-changes
+```
+
+Rollback:
+
+```bash
+./scripts/disable-pam.sh
+```
+
+`disable-pam.sh` без `--force` отключает fingerprint только если проект сам
+включил `with-fingerprint` и оставил project marker. Подробности:
+[PAM, sudo, GNOME и GDM](docs/pam-gdm-sudo.md).
+
 ## Rollback
 
 Полный rollback project systemd/D-Bus/helper артефактов:
@@ -102,6 +136,7 @@ fprintd-verify "$USER"
 - [Install flow](docs/install.md)
 - [Rollback flow](docs/rollback.md)
 - [Systemd design](docs/systemd-design.md)
+- [PAM, sudo, GNOME и GDM](docs/pam-gdm-sudo.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Security and privacy](docs/security-and-privacy.md)
 - [Release checklist](docs/release-checklist.md)

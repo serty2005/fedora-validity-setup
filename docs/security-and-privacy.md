@@ -20,9 +20,23 @@
 - D-Bus policy files в `/etc/dbus-1/system.d`;
 - systemd unit files в `/etc/systemd/system`;
 - helper `/opt/fedora-validity/bin/ensure-firmware.sh`;
-- локальный venv/cache под `/opt/fedora-validity`.
+- локальный venv/cache под `/opt/fedora-validity`;
+- optional PAM/authselect backup/state под `/opt/fedora-validity/backups` и
+  `/opt/fedora-validity/state`.
 
-PAM/GDM/sudo integration не выполняется. `authselect` не вызывается install/systemd/rollback скриптами.
+PAM/GDM/sudo integration выполняется только отдельными script entrypoints:
+
+- `scripts/check-pam-state.sh` read-only;
+- `scripts/enable-pam.sh` через `authselect enable-feature with-fingerprint`;
+- `scripts/disable-pam.sh` через `authselect disable-feature with-fingerprint`.
+
+Остальные install/systemd/rollback скрипты не вызывают `authselect` и не
+редактируют `/etc/pam.d`, GDM или sudo policy.
+
+`enable-pam.sh` не отключает password fallback и не редактирует PAM через
+`sed`. Если `with-fingerprint` уже был включён до проекта, он фиксирует факт и
+не создаёт project marker для последующего отключения. `disable-pam.sh` без
+`--force` не отключает fingerprint без project marker.
 
 ## Firmware cache
 
@@ -31,3 +45,8 @@ Persistent firmware cache хранится в `/opt/fedora-validity/firmware/pyt
 ## Диагностика
 
 `scripts/collect-diagnostics.sh` может собирать чувствительные данные: USB serial, usernames, локальные пути, journal/audit записи и состояние authentication stack. Логи диагностики предназначены только для локального анализа.
+
+`scripts/check-pam-state.sh` выводит локальный authentication state:
+`authselect current`, найденные `pam_fprintd.so`, installed packages,
+service status и enrolled fingerprint names. Не публиковать этот вывод без
+проверки usernames и локальных путей.

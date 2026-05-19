@@ -1,7 +1,62 @@
 # Troubleshooting
 
-Этот проект не включает PAM/GDM/sudo fingerprint authentication. Не менять
-`authselect`, `/etc/pam.d`, GDM или sudo policy в рамках publication flow.
+PAM/GDM/sudo fingerprint authentication включается только отдельным guarded
+этапом через `scripts/enable-pam.sh`. Не менять `authselect`, `/etc/pam.d`,
+GDM или sudo policy вручную в рамках install/systemd flow.
+
+## PAM state baseline
+
+Перед изменениями authentication stack снять read-only snapshot:
+
+```bash
+./scripts/check-pam-state.sh
+./scripts/check-pam-state.sh --verify "$USER"
+```
+
+Если `authselect current` уже содержит `with-fingerprint`, это pre-existing
+состояние системы. `scripts/enable-pam.sh` должен только зафиксировать факт и
+не создавать project marker для отключения.
+
+## sudo fingerprint не появляется
+
+Проверить нижний слой:
+
+```bash
+./scripts/check-dbus-chain.sh --wait 20
+./scripts/stability-check.sh --verify "$USER"
+```
+
+Затем проверить PAM/authselect:
+
+```bash
+authselect current
+grep -R "pam_fprintd" /etc/pam.d /etc/authselect 2>/dev/null || true
+rpm -q fprintd fprintd-pam libfprint || true
+```
+
+Если `with-fingerprint` отсутствует и service layer зелёный:
+
+```bash
+./scripts/enable-pam.sh "$USER"
+```
+
+## Нужно откатить PAM fingerprint
+
+Если проект сам включил `with-fingerprint`:
+
+```bash
+./scripts/disable-pam.sh
+```
+
+Если fingerprint был включён до проекта, скрипт без `--force` ничего не
+отключит. Для намеренного глобального отключения:
+
+```bash
+./scripts/disable-pam.sh --force
+```
+
+Пароль должен оставаться fallback. Не закрывать единственную активную
+административную сессию до проверки fallback.
 
 ## python-validity exits after sensor reboot
 

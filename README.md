@@ -52,6 +52,27 @@ Foreground debug flow в двух терминалах:
 ./scripts/enroll-test.sh --finger right-index-finger "$USER"
 ```
 
+## Script menu
+
+Для повторяемых ручных проверок можно использовать тонкий dispatcher:
+
+```bash
+./scripts/project-menu.sh
+```
+
+Тот же menu можно запускать неинтерактивно:
+
+```bash
+./scripts/project-menu.sh --run check-dbus
+./scripts/project-menu.sh --run stability
+./scripts/project-menu.sh --run systemd-test
+./scripts/project-menu.sh --run enroll
+./scripts/project-menu.sh --run check-pam
+```
+
+`project-menu.sh` не редактирует PAM, GDM, sudo, systemd или D-Bus files
+напрямую. Все действия делегируются существующим guarded scripts.
+
 ## Systemd flow
 
 После успешного foreground flow:

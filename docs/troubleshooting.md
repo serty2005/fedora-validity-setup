@@ -17,6 +17,25 @@ GDM или sudo policy вручную в рамках install/systemd flow.
 состояние системы. `scripts/enable-pam.sh` должен только зафиксировать факт и
 не создавать project marker для отключения.
 
+## Script menu показывает missing helper
+
+`scripts/project-menu.sh` ищет helpers в `scripts/` текущего checkout. Если
+menu запущен из неполной копии и пишет:
+
+```text
+[error] missing helper: .../scripts/<name>.sh
+```
+
+перейти в корень репозитория и проверить checkout:
+
+```bash
+git status --short --branch
+ls scripts
+```
+
+Menu не является самостоятельным recovery tool: он только вызывает
+существующие project scripts.
+
 ## sudo fingerprint не появляется
 
 Проверить нижний слой:
@@ -39,6 +58,48 @@ rpm -q fprintd fprintd-pam libfprint || true
 ```bash
 ./scripts/enable-pam.sh "$USER"
 ```
+
+## GDM зависает после logout с fingerprint prompt
+
+На системе с autologin был воспроизведён опасный сценарий: после logout GDM
+показал fingerprint prompt, первая попытка не привела к входу, затем password
+fallback оказался в занятом состоянии и потребовался reboot.
+
+В предыдущем boot журнал показал:
+
+```text
+gdm-fingerprint: pam_unix(...:session): session opened for user
+gdm-password: pam_unix(...:session): session opened for user
+Gdm: Couldn't find session for user
+Gdm: Tried to look up non-existent conversation gdm-password
+```
+
+Это похоже на конфликт GDM conversations после autologin/logout, а не на
+поломку нижнего service layer: после reboot `open-fprintd.service`,
+`python3-validity.service`, D-Bus chain и `fprintd-list` снова проходят.
+
+Рекомендация для этого проекта: не считать GDM fingerprint login
+production-ready. Использовать fingerprint для `sudo` и GNOME lock/unlock,
+оставляя password fallback. Если GDM login начинает мешать доступу, восстановить
+PAM path:
+
+```bash
+./scripts/disable-pam.sh
+```
+
+Если `with-fingerprint` был включён до проекта и marker отсутствует,
+`disable-pam.sh` без `--force` ничего не отключит; решение об `--force`
+принимать отдельно.
+
+## Нужен fingerprint как GitHub/browser 2FA
+
+Validity `138a:0097` через `python-validity`, `open-fprintd` и
+`pam_fprintd.so` не является FIDO2/WebAuthn authenticator. Его нельзя
+зарегистрировать в GitHub как passkey или security key через этот проект.
+
+Для GitHub/browser 2FA использовать отдельный WebAuthn-compatible метод:
+hardware FIDO2 key, phone passkey, password manager passkey, GitHub Mobile,
+TOTP или recovery codes.
 
 ## Нужно откатить PAM fingerprint
 

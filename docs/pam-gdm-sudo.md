@@ -41,6 +41,17 @@ Read-only snapshot:
 - `fprintd-list "$USER"`;
 - `fprintd-verify "$USER"` только с `--verify`.
 
+Эти же guarded entrypoints доступны через menu:
+
+```bash
+./scripts/project-menu.sh --run check-pam
+./scripts/project-menu.sh --run enable-pam
+./scripts/project-menu.sh --run disable-pam
+```
+
+Menu не вносит собственных PAM/authselect/GDM/sudo изменений и только
+делегирует в `check-pam-state.sh`, `enable-pam.sh` или `disable-pam.sh`.
+
 ## Включение
 
 ```bash
@@ -131,6 +142,21 @@ root-сессию до проверки fallback. Для восстановле�
 Проверять осторожно только после успешных sudo и lock screen тестов. Перед
 logout/reboot должен быть готов rollback путь и рабочий пароль.
 
+На конфигурации с включённым autologin обнаружен риск: после logout GDM может
+запустить параллельные `gdm-fingerprint` и `gdm-password` conversations. В
+журнале это выглядело как успешная PAM-аутентификация через `pam_fprintd`,
+затем успешное открытие password session и ошибки GDM вида:
+
+```text
+Gdm: Couldn't find session for user
+Gdm: Tried to look up non-existent conversation gdm-password
+GdmSession: Tried to start session of nonexistent conversation gdm-password
+```
+
+После такого состояния вход мог зависнуть до reboot. Поэтому GDM fingerprint
+login не считается production-ready критерием для этого проекта. Безопасная
+граница текущей интеграции: `sudo`, GNOME lock/unlock и password fallback.
+
 Если после logout GDM fingerprint ведёт себя нестабильно, войти паролем и
 отключить project-enabled fingerprint:
 
@@ -149,6 +175,14 @@ Polkit authentication prompts используют системный PAM пут
 после sudo и lock screen. Проект не добавляет отдельные polkit policy changes
 для PAM-аутентификации.
 
+## Browser passkeys / WebAuthn
+
+Этот проект не делает fingerprint sensor браузерным security key, passkey или
+WebAuthn authenticator. Стек `python-validity` -> `open-fprintd` ->
+`pam_fprintd.so` работает на уровне локального Linux PAM/fprintd и не
+предоставляет браузеру FIDO2/WebAuthn authenticator для GitHub, passkeys или
+двухфакторной аутентификации сайтов.
+
 ## Критерии успеха этапа
 
 1. `./scripts/check-dbus-chain.sh --wait 20` проходит.
@@ -157,5 +191,5 @@ Polkit authentication prompts используют системный PAM пут
 4. Неверный палец не даёт успешную авторизацию.
 5. Пароль остаётся fallback.
 6. GNOME lock screen проверен вручную.
-7. GDM login проверен только после sudo/lock screen.
+7. GDM login не является production-ready критерием на autologin setup.
 8. Есть rollback через `scripts/disable-pam.sh`.

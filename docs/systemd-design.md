@@ -87,6 +87,17 @@ Helper сначала копирует `.xpfwext` из persistent cache:
 test workflow, не
 включает автозапуск и не меняет PAM/authselect/GDM/sudo.
 
+Тот же service-management flow можно вызвать через dispatcher:
+
+```bash
+./scripts/project-menu.sh --run systemd-test
+./scripts/project-menu.sh --run restart-services
+./scripts/project-menu.sh --run install-systemd
+```
+
+Dispatcher не содержит собственного systemd/D-Bus management; он вызывает
+соответствующие project scripts.
+
 ## Stability matrix
 
 До PAM/GDM/sudo integration сервисный слой должен пройти такие проверки:

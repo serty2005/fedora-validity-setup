@@ -14,6 +14,12 @@ Rollback удаляет project systemd/D-Bus/helper артефакты и не 
 ./scripts/rollback.sh
 ```
 
+Через dispatcher:
+
+```bash
+./scripts/project-menu.sh --run rollback
+```
+
 Скрипт:
 
 - останавливает `open-fprintd.service` и `python3-validity.service`;

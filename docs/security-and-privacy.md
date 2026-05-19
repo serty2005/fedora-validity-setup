@@ -30,6 +30,11 @@ PAM/GDM/sudo integration выполняется только отдельным�
 - `scripts/enable-pam.sh` через `authselect enable-feature with-fingerprint`;
 - `scripts/disable-pam.sh` через `authselect disable-feature with-fingerprint`.
 
+`scripts/project-menu.sh` является dispatcher-слоем и не добавляет отдельный
+путь системных изменений. Он вызывает только documented project scripts:
+service checks, service restart/install, enrollment check, PAM guards и
+rollback.
+
 Остальные install/systemd/rollback скрипты не вызывают `authselect` и не
 редактируют `/etc/pam.d`, GDM или sudo policy.
 
@@ -50,3 +55,12 @@ Persistent firmware cache хранится в `/opt/fedora-validity/firmware/pyt
 `authselect current`, найденные `pam_fprintd.so`, installed packages,
 service status и enrolled fingerprint names. Не публиковать этот вывод без
 проверки usernames и локальных путей.
+
+## Browser authentication boundary
+
+Fingerprint support в этом проекте ограничен локальным Linux authentication
+stack. Он не создаёт FIDO2/WebAuthn authenticator, не регистрирует passkeys и
+не позволяет использовать Validity `138a:0097` как security key для GitHub или
+других сайтов. Для browser 2FA/passkeys нужен отдельный совместимый
+authenticator: hardware FIDO2 key, phone passkey, password manager passkey или
+поддерживаемый platform authenticator.

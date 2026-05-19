@@ -114,3 +114,26 @@ systemctl is-active open-fprintd.service python3-validity.service
 fprintd-list "$USER"
 fprintd-verify "$USER"
 ```
+
+## Optional script menu
+
+Для локальной production-проверки можно запускать:
+
+```bash
+./scripts/project-menu.sh
+```
+
+Неинтерактивные actions:
+
+```bash
+./scripts/project-menu.sh --run check-dbus
+./scripts/project-menu.sh --run stability
+./scripts/project-menu.sh --run systemd-test
+./scripts/project-menu.sh --run restart-services
+./scripts/project-menu.sh --run install-systemd
+./scripts/project-menu.sh --run enroll
+```
+
+Menu является только dispatcher-слоем. Он не выполняет прямые изменения
+PAM/authselect/GDM/sudo/systemd/D-Bus и вызывает только documented project
+scripts.

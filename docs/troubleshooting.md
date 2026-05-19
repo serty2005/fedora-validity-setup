@@ -317,6 +317,32 @@ loaded`, даже если unit-файлы установлены и `systemctl 
 `Loaded: loaded`. Исправленные скрипты больше не вызывают `reset-failed` для
 этих unit-файлов.
 
+## Stale USB handle after suspend/resume
+
+Если после resume `lsusb -d 138a:0097` показывает сенсор, но
+`fprintd-list "$USER"` падает с:
+
+```text
+usb.core.USBError: [Errno 19] No such device
+```
+
+значит `python-validity` пережил suspend со старым USB handle. Установить или
+переустановить systemd helpers:
+
+```bash
+./scripts/install-systemd.sh --enable
+```
+
+Это устанавливает `/usr/lib/systemd/system-sleep/fedora-validity-setup`, который
+перезапускает project services на `post` phase после resume.
+
+Ручное восстановление:
+
+```bash
+./scripts/restart-project-services.sh
+./scripts/check-dbus-chain.sh --wait 20
+```
+
 If the system becomes difficult to authenticate into after later stages, boot
 with an alternate recovery method and disable the authselect fingerprint
 feature:

@@ -38,6 +38,9 @@ OUTPUT="$(
 grep -F 'open-fprintd.service' <<<"$OUTPUT" >/dev/null
 grep -F 'python3-validity.service' <<<"$OUTPUT" >/dev/null
 grep -F '/opt/fedora-validity/bin/ensure-firmware.sh' <<<"$OUTPUT" >/dev/null
+grep -F '/opt/fedora-validity/bin/restart-project-services.sh' <<<"$OUTPUT" >/dev/null
+grep -F 'system-sleep-validity.sh' <<<"$OUTPUT" >/dev/null
+grep -F '/usr/lib/systemd/system-sleep/fedora-validity-setup' <<<"$OUTPUT" >/dev/null
 grep -F 'enable requested: no' <<<"$OUTPUT" >/dev/null
 
 grep -F -- '--dry-run' "$TMPDIR/dbus-policy-args" >/dev/null

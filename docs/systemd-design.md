@@ -141,3 +141,38 @@ restart/rebind strategy. Если не чинит, нужно исследова
 Rollback не отключает `authselect with-fingerprint`, не редактирует
 `/etc/pam.d`, не меняет GDM/sudo и не удаляет Fedora RPM `fprintd`,
 `fprintd-pam`, `libfprint`.
+
+## Suspend/Resume
+
+После suspend/resume USB sensor может вернуться с новым device number, например
+`Bus 001 Device 006` -> `Bus 001 Device 010`. При этом `python-validity.service`
+может остаться старым процессом и держать stale USB handle. Симптом:
+
+```text
+usb.core.USBError: [Errno 19] No such device
+```
+
+Для этого `install-systemd.sh` устанавливает:
+
+```text
+/opt/fedora-validity/bin/restart-project-services.sh
+/usr/lib/systemd/system-sleep/fedora-validity-setup
+```
+
+`system-sleep` hook:
+
+- ничего не делает на `pre`;
+- на `post` вызывает `restart-project-services.sh --no-status`;
+- restart order:
+  - stop `python3-validity.service`;
+  - stop `open-fprintd.service`;
+  - stop stock `fprintd.service`;
+  - start `open-fprintd.service`;
+  - start `python3-validity.service`.
+
+Ручной эквивалент:
+
+```bash
+./scripts/restart-project-services.sh
+./scripts/check-dbus-chain.sh --wait 20
+```

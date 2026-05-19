@@ -4,7 +4,10 @@ set -euo pipefail
 PREFIX="/opt/fedora-validity"
 DBUS_DEST_DIR="/etc/dbus-1/system.d"
 SYSTEMD_DEST_DIR="/etc/systemd/system"
+SYSTEM_SLEEP_DIR="/usr/lib/systemd/system-sleep"
 HELPER_PATH="$PREFIX/bin/ensure-firmware.sh"
+RESTART_HELPER_PATH="$PREFIX/bin/restart-project-services.sh"
+SYSTEM_SLEEP_HOOK="$SYSTEM_SLEEP_DIR/fedora-validity-setup"
 DRY_RUN=0
 PROJECT_SERVICES=(open-fprintd.service python3-validity.service)
 
@@ -71,6 +74,10 @@ fi
 
 section "remove project-installed helper files"
 run_optional sudo rm -f "$HELPER_PATH"
+run_optional sudo rm -f "$RESTART_HELPER_PATH"
+
+section "remove project-installed system-sleep hook"
+run_optional sudo rm -f "$SYSTEM_SLEEP_HOOK"
 
 section "available backups"
 if [[ -d "$PREFIX/backups" ]]; then

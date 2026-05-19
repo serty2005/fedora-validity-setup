@@ -22,6 +22,8 @@ Rollback удаляет project systemd/D-Bus/helper артефакты и не 
 - удаляет `/etc/systemd/system/python3-validity.service`;
 - удаляет `/etc/dbus-1/system.d/io.github.uunicorn.Fprint.conf`;
 - удаляет `/opt/fedora-validity/bin/ensure-firmware.sh`;
+- удаляет `/opt/fedora-validity/bin/restart-project-services.sh`;
+- удаляет `/usr/lib/systemd/system-sleep/fedora-validity-setup`;
 - выполняет `systemctl daemon-reload`;
 - пытается перезагрузить D-Bus policy.
 

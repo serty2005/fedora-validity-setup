@@ -37,6 +37,8 @@ grep -F '/etc/systemd/system/open-fprintd.service' <<<"$OUTPUT" >/dev/null
 grep -F '/etc/systemd/system/python3-validity.service' <<<"$OUTPUT" >/dev/null
 grep -F '/etc/dbus-1/system.d/io.github.uunicorn.Fprint.conf' <<<"$OUTPUT" >/dev/null
 grep -F '/opt/fedora-validity/bin/ensure-firmware.sh' <<<"$OUTPUT" >/dev/null
+grep -F '/opt/fedora-validity/bin/restart-project-services.sh' <<<"$OUTPUT" >/dev/null
+grep -F '/usr/lib/systemd/system-sleep/fedora-validity-setup' <<<"$OUTPUT" >/dev/null
 
 if grep -E 'authselect|pam_fprintd|gdm|/etc/pam\.d' "$TMPDIR/systemctl-args" "$TMPDIR/sudo-args" "$TMPDIR/busctl-args" >/dev/null; then
   printf 'rollback must not run commands that touch PAM/authselect/GDM\n' >&2

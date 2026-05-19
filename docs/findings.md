@@ -163,13 +163,30 @@ Latest local state check: 2026-05-18 during iteration 003.
   `Bus 001 Device 012`, а `python3-validity.service` получил новый PID.
 - `scripts/check-dbus-chain.sh` теперь поддерживает `--wait SECONDS` и по
   умолчанию ждёт до 10 секунд появления USB device и registered D-Bus device.
+- Reboot-test после `wait for transient validity USB re-enumeration` успешен:
+  - `open-fprintd.service`: `enabled`, `active`, PID `965`;
+  - `python3-validity.service`: `enabled`, `active`, PID `1161`;
+  - `ensure-firmware.sh` завершился успешно в `ExecStartPre`;
+  - `lsusb` видит `138a:0097` как `Bus 001 Device 006`;
+  - `GetDevices` возвращает `ao 1 "/net/reactivated/Fprint/Device/0"`;
+  - `fprintd-list "$USER"` видит `right-index-finger`;
+  - `check-dbus-chain.sh --wait 20` прошёл без D-Bus/USB error.
+- Suspend/resume выявил стабильный stale USB handle сценарий:
+  - `lsusb` видит сенсор после resume как новый USB device number;
+  - `open-fprintd.service` и `python3-validity.service` остаются active;
+  - `python-validity` PID не меняется;
+  - D-Bus device всё ещё зарегистрирован;
+  - `ListEnrolledFingers` падает с `usb.core.USBError: [Errno 19] No such device`.
+- Исправление: добавлены `scripts/restart-project-services.sh` и
+  `scripts/system-sleep-validity.sh`; `install-systemd.sh` устанавливает
+  post-resume hook в `/usr/lib/systemd/system-sleep/fedora-validity-setup`,
+  rollback удаляет hook и helper.
 
 ## Ближайшие шаги
 
 1. Выполнить `./scripts/stability-check.sh --iterations 3` из локального терминала.
 2. Для post-verify transient окна использовать
    `./scripts/check-dbus-chain.sh --wait 15`.
-3. Выполнить reboot и suspend/resume stability matrix.
-3. Если stale USB handle повторяется после suspend/replug, добавить отдельную
-   итерацию для restart/rebind strategy.
-4. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.
+3. Переустановить systemd helpers через `./scripts/install-systemd.sh --enable`.
+4. Повторить suspend/resume stability matrix.
+5. PAM/authselect/GDM/sudo всё ещё не менять до отдельной итерации.

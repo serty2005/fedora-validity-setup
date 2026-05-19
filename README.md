@@ -61,6 +61,9 @@ Foreground debug flow в двух терминалах:
 ./scripts/systemd-test.sh --verify "$USER"
 ```
 
+`install-systemd.sh` также устанавливает `system-sleep` hook, который после
+resume перезапускает project services и сбрасывает stale USB handle.
+
 Автозапуск включать только после ручной systemd-проверки:
 
 ```bash

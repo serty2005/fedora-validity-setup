@@ -4,11 +4,14 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_DIR="$PROJECT_ROOT/systemd"
 DEST_DIR="${SYSTEMD_DEST_DIR:-/etc/systemd/system}"
+SYSTEM_SLEEP_DIR="${SYSTEM_SLEEP_DIR:-/usr/lib/systemd/system-sleep}"
 PREFIX="/opt/fedora-validity"
 BIN_DIR="${FEDORA_VALIDITY_BIN_DIR:-$PREFIX/bin}"
 BACKUP_ROOT="${SYSTEMD_BACKUP_ROOT:-$PREFIX/backups}"
 DBUS_POLICY_SCRIPT="${DBUS_POLICY_SCRIPT:-$PROJECT_ROOT/scripts/install-dbus-policy.sh}"
 ENSURE_FIRMWARE_SCRIPT="$PROJECT_ROOT/scripts/ensure-firmware.sh"
+RESTART_SERVICES_SCRIPT="$PROJECT_ROOT/scripts/restart-project-services.sh"
+SYSTEM_SLEEP_SCRIPT="$PROJECT_ROOT/scripts/system-sleep-validity.sh"
 DRY_RUN=0
 ENABLE=0
 BACKUP_DIR="$BACKUP_ROOT/systemd-$(date +%Y%m%d-%H%M%S)"
@@ -91,6 +94,24 @@ install_helper() {
   run sudo install -m 0755 "$source" "$dest"
 }
 
+install_system_sleep_hook() {
+  local source="$1"
+  local dest="$SYSTEM_SLEEP_DIR/fedora-validity-setup"
+
+  section "install system-sleep hook"
+  require_file "$source"
+  printf 'source=%s\n' "$source"
+  printf 'dest=%s\n' "$dest"
+
+  if [[ -f "$dest" ]] && cmp -s "$source" "$dest"; then
+    printf '[info] already installed and identical: %s\n' "$dest"
+    return 0
+  fi
+
+  run sudo mkdir -p "$SYSTEM_SLEEP_DIR"
+  run sudo install -m 0755 "$source" "$dest"
+}
+
 while (($# > 0)); do
   case "$1" in
     --dry-run)
@@ -116,12 +137,15 @@ section "preflight"
 printf 'project root: %s\n' "$PROJECT_ROOT"
 printf 'systemd source dir: %s\n' "$SOURCE_DIR"
 printf 'systemd destination dir: %s\n' "$DEST_DIR"
+printf 'system-sleep destination dir: %s\n' "$SYSTEM_SLEEP_DIR"
 printf 'helper destination dir: %s\n' "$BIN_DIR"
 printf 'backup root: %s\n' "$BACKUP_ROOT"
 printf 'dry run: %s\n' "$([[ "$DRY_RUN" == "1" ]] && printf yes || printf no)"
 printf 'enable requested: %s\n' "$([[ "$ENABLE" == "1" ]] && printf yes || printf no)"
 require_file "$DBUS_POLICY_SCRIPT"
 require_file "$ENSURE_FIRMWARE_SCRIPT"
+require_file "$RESTART_SERVICES_SCRIPT"
+require_file "$SYSTEM_SLEEP_SCRIPT"
 for unit in "${UNITS[@]}"; do
   require_file "$SOURCE_DIR/$unit"
 done
@@ -140,6 +164,8 @@ else
 fi
 
 install_helper "$ENSURE_FIRMWARE_SCRIPT"
+install_helper "$RESTART_SERVICES_SCRIPT"
+install_system_sleep_hook "$SYSTEM_SLEEP_SCRIPT"
 
 for unit in "${UNITS[@]}"; do
   install_unit "$unit"

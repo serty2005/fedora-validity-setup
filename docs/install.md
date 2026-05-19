@@ -83,6 +83,16 @@
 
 `scripts/systemd-test.sh` останавливает stock `fprintd.service` только для теста, перезапускает project services, ждёт `GetDevices`, затем запускает `fprintd-list` и, при `--verify`, `fprintd-verify`.
 
+`scripts/install-systemd.sh` также устанавливает:
+
+- `/opt/fedora-validity/bin/restart-project-services.sh`
+- `/usr/lib/systemd/system-sleep/fedora-validity-setup`
+
+System sleep hook ничего не делает на `pre` phase и перезапускает project
+services на `post` phase после suspend/resume. Это нужно, потому что после сна
+USB device number меняется, а старый `python-validity` process может держать
+stale USB handle.
+
 ## Enable after verification
 
 Только после успешного foreground flow и `systemd-test.sh --verify`:

@@ -1,0 +1,21 @@
+# Local diagnostics and private machine data
+docs/diagnostics-*.log
+docs/iterations.local/
+fedora-validity-setup.zip
+
+# Upstream clones and generated build outputs
+third_party/
+third_party.*.local/
+*.egg-info/
+build/
+dist/
+
+# Python/cache noise
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local editor/OS files
+.DS_Store
+*.swp
+*~

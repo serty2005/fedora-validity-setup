@@ -1,0 +1,3 @@
+# Repo-local rule for the Validity Sensors 138a:0097 device.
+# Do not install this file until the systemd path has been verified manually.
+ACTION=="add|change", SUBSYSTEM=="usb", ATTR{idVendor}=="138a", ATTR{idProduct}=="0097", TAG+="systemd", ENV{SYSTEMD_WANTS}+="python3-validity.service"

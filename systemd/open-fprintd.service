@@ -1,0 +1,14 @@
+[Unit]
+Description=Local open-fprintd compatibility service
+Documentation=https://github.com/uunicorn/open-fprintd
+Conflicts=fprintd.service
+After=dbus.service
+
+[Service]
+Type=simple
+ExecStart=/opt/fedora-validity/venv/bin/python /opt/fedora-validity/venv/lib/open-fprintd/open-fprintd --debug
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target

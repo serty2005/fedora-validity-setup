@@ -1,0 +1,18 @@
+[Unit]
+Description=Local python-validity backend for Validity Sensors 138a:0097
+Documentation=https://github.com/uunicorn/python-validity
+Requires=open-fprintd.service
+After=open-fprintd.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/mkdir -p /opt/fedora-validity/etc/python-validity
+ExecStartPre=/bin/sh -c 'test -f /opt/fedora-validity/etc/python-validity/dbus-service.yaml || printf "user_to_sid: {}\\n" > /opt/fedora-validity/etc/python-validity/dbus-service.yaml'
+ExecStartPre=/bin/sh -c 'for i in 1 2 3 4 5 6 7 8 9 10; do busctl --system list | awk '\''$1 == "net.reactivated.Fprint" && $2 != "-" && $6 == "open-fprintd.service" { found=1 } END { exit !found }'\'' && exit 0; sleep 1; done; exit 1'
+ExecStartPre=/opt/fedora-validity/bin/ensure-firmware.sh
+ExecStart=/opt/fedora-validity/venv/bin/python /opt/fedora-validity/venv/lib/python-validity/dbus-service --debug --configpath /opt/fedora-validity/etc/python-validity
+Restart=on-success
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target
